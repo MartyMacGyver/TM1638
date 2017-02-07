@@ -1,40 +1,26 @@
-const int strobe = 7;
-const int clock = 9;
-const int data = 8;
 
-void sendCommand(uint8_t value)
-{
-  digitalWrite(strobe, LOW);
-  shiftOut(data, clock, LSBFIRST, value);
-  digitalWrite(strobe, HIGH);
-}
+#include "wiring_shift_mod.h"
 
-void reset()
-{
-  sendCommand(0x40); // set auto increment mode
-  digitalWrite(strobe, LOW);
-  shiftOut(data, clock, LSBFIRST, 0xc0);   // set starting address to 0
-  for(uint8_t i = 0; i < 16; i++)
-  {
-    shiftOut(data, clock, LSBFIRST, 0x00);
-  }
-  digitalWrite(strobe, HIGH);
-}
+#define CLOCK_TYPE CLOCK_INVERT
+#define CLOCK_DELAY_US 1
 
-void setup()
-{
-  pinMode(strobe, OUTPUT);
-  pinMode(clock, OUTPUT);
-  pinMode(data, OUTPUT);
-
-  sendCommand(0x8f);  // activate
-  reset();
-}
-
+const int strobe_pin =  4;
+const int clock_pin  = 16;
+const int data_pin   = 17;
 
 #define COUNTING_MODE 0
 #define SCROLL_MODE 1
 #define BUTTON_MODE 2
+
+void setup()
+{
+  pinMode(strobe_pin, OUTPUT);
+  pinMode(clock_pin, OUTPUT);
+  pinMode(data_pin, OUTPUT);
+
+  sendCommand(0x8f);  // activate
+  reset();
+}
 
 void loop()
 {
@@ -56,6 +42,25 @@ void loop()
   delay(200);
 }
 
+void sendCommand(uint8_t value)
+{
+  digitalWrite(strobe_pin, LOW);
+  shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, value);
+  digitalWrite(strobe_pin, HIGH);
+}
+
+void reset()
+{
+  sendCommand(0x40); // set auto increment mode
+  digitalWrite(strobe_pin, LOW);
+  shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, 0xc0);   // set starting address to 0
+  for(uint8_t i = 0; i < 16; i++)
+  {
+    shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, 0x00);
+  }
+  digitalWrite(strobe_pin, HIGH);
+}
+
 bool counting()
 {
                        /*0*/ /*1*/ /*2*/ /*3*/ /*4*/ /*5*/ /*6*/ /*7*/ /*8*/ /*9*/
@@ -64,15 +69,15 @@ bool counting()
   static uint8_t digit = 0;
 
   sendCommand(0x40);
-  digitalWrite(strobe, LOW);
-  shiftOut(data, clock, LSBFIRST, 0xc0);
+  digitalWrite(strobe_pin, LOW);
+  shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, 0xc0);
   for(uint8_t position = 0; position < 8; position++)
   {
-    shiftOut(data, clock, LSBFIRST, digits[digit]);
-    shiftOut(data, clock, LSBFIRST, 0x00);
+    shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, digits[digit]);
+    shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, 0x00);
   }
 
-  digitalWrite(strobe, HIGH);
+  digitalWrite(strobe_pin, HIGH);
 
   digit = ++digit % 10;
   return digit == 0;
@@ -96,18 +101,18 @@ bool scroll()
   uint8_t scrollLength = sizeof(scrollText);
 
   sendCommand(0x40);
-  digitalWrite(strobe, LOW);
-  shiftOut(data, clock, LSBFIRST, 0xc0);
+  digitalWrite(strobe_pin, LOW);
+  shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, 0xc0);
 
   for(int i = 0; i < 8; i++)
   {
     uint8_t c = scrollText[(index + i) % scrollLength];
 
-    shiftOut(data, clock, LSBFIRST, c);
-    shiftOut(data, clock, LSBFIRST, c != 0 ? 1 : 0);
+    shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, c);
+    shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, c != 0 ? 1 : 0);
   }
 
-  digitalWrite(strobe, HIGH);
+  digitalWrite(strobe_pin, HIGH);
 
   index = ++index % (scrollLength << 1);
 
@@ -134,10 +139,10 @@ void buttons()
   for(uint8_t position = 0; position < 8; position++)
   {
     sendCommand(0x44);
-    digitalWrite(strobe, LOW);
-    shiftOut(data, clock, LSBFIRST, 0xC0 + (position << 1));
-    shiftOut(data, clock, LSBFIRST, promptText[textStartPos + position]);
-    digitalWrite(strobe, HIGH);
+    digitalWrite(strobe_pin, LOW);
+    shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, 0xC0 + (position << 1));
+    shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, promptText[textStartPos + position]);
+    digitalWrite(strobe_pin, HIGH);
   }
 
   block = (block + 1) % 16;
@@ -155,29 +160,29 @@ void buttons()
 uint8_t readButtons(void)
 {
   uint8_t buttons = 0;
-  digitalWrite(strobe, LOW);
-  shiftOut(data, clock, LSBFIRST, 0x42);
+  digitalWrite(strobe_pin, LOW);
+  shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, 0x42);
 
-  pinMode(data, INPUT);
+  pinMode(data_pin, INPUT);
 
   for (uint8_t i = 0; i < 4; i++)
   {
-    uint8_t v = shiftIn(data, clock, LSBFIRST) << i;
+    uint8_t v = shiftInMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US) << i;
     buttons |= v;
   }
 
-  pinMode(data, OUTPUT);
-  digitalWrite(strobe, HIGH);
+  pinMode(data_pin, OUTPUT);
+  digitalWrite(strobe_pin, HIGH);
   return buttons;
 }
 
 void setLed(uint8_t value, uint8_t position)
 {
-  pinMode(data, OUTPUT);
+  pinMode(data_pin, OUTPUT);
 
   sendCommand(0x44);
-  digitalWrite(strobe, LOW);
-  shiftOut(data, clock, LSBFIRST, 0xC1 + (position << 1));
-  shiftOut(data, clock, LSBFIRST, value);
-  digitalWrite(strobe, HIGH);
+  digitalWrite(strobe_pin, LOW);
+  shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, 0xC1 + (position << 1));
+  shiftOutMod(data_pin, clock_pin, LSBFIRST, CLOCK_TYPE, CLOCK_DELAY_US, value);
+  digitalWrite(strobe_pin, HIGH);
 }
