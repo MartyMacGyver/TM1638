@@ -20,6 +20,8 @@ Connect the STB, CLK, and DIO pins to the appropriate pins on your microcontroll
   - The original examples for Arduino used pins 7 (STB), 9 (CLK), 8 (DIO), but other pins will work as well.
   - The current examples were modified for the ESP32 using pins 4 (STB), 16 (CLK), 17 (DIO). Again, others pins will work too, just don't use pins that are reserved for special functions.
 
+See the documentation folder for the datasheet for the TM1638 (translated), sourced from http://www.titanmec.com/index.php/product/view/id/303/typeid/59.html
+
 Original code: https://github.com/moozzyk/TM1638
 
 Blog post: http://blog.3d-logic.com/2015/01/10/using-a-tm1638-based-board-with-arduino/
