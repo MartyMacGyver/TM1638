@@ -32,12 +32,13 @@ uint8_t shiftInMod(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder, uint8_t 
   
 	for (i = 0; i < 8; ++i) {
 		digitalWrite(clockPin, (clock_type ? LOW : HIGH));
-    delayMicroseconds(clock_delay_us);
+    		delayMicroseconds(clock_delay_us);
 		if (bitOrder == LSBFIRST)
 			value |= digitalRead(dataPin) << i;
 		else
 			value |= digitalRead(dataPin) << (7 - i);
 		digitalWrite(clockPin, (clock_type ? HIGH : LOW));
+    		delayMicroseconds(clock_delay_us);
 	}
 	return value;
 }
@@ -53,8 +54,9 @@ void shiftOutMod(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder, uint8_t cl
 			digitalWrite(dataPin, !!(val & (1 << (7 - i))));
 			
 		digitalWrite(clockPin, (clock_type ? LOW : HIGH));
-    delayMicroseconds(clock_delay_us);
-		digitalWrite(clockPin, (clock_type ? HIGH : LOW));		
+    		delayMicroseconds(clock_delay_us);
+		digitalWrite(clockPin, (clock_type ? HIGH : LOW));
+    		delayMicroseconds(clock_delay_us);		
 	}
 }
 
